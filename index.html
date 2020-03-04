@@ -136,199 +136,30 @@
           <div id="js-content" class="content-ll">
             
   
-    <article id="post-MySQL索引" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+    <article id="post-MySQL架构" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
         
   
     <h1 itemprop="name">
-      <a class="article-title" href="/2020/03/04/MySQL%E7%B4%A2%E5%BC%95/">MySQL索引</a>
+      <a class="article-title" href="/2020/03/05/MySQL%E6%9E%B6%E6%9E%84/">MySQL架构</a>
     </h1>
   
 
         
-        <a href="/2020/03/04/MySQL%E7%B4%A2%E5%BC%95/" class="archive-article-date">
-  	<time datetime="2020-03-04T14:39:46.077Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-03-04</time>
+        <a href="/2020/03/05/MySQL%E6%9E%B6%E6%9E%84/" class="archive-article-date">
+  	<time datetime="2020-03-04T16:58:15.674Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-03-05</time>
 </a>
         
       </header>
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h4 id="1-为什么要使用索引"><a href="#1-为什么要使用索引" class="headerlink" title="1. 为什么要使用索引"></a>1. 为什么要使用索引</h4><p>​        使用索引可以加快数据库数据的查询速度，这是为什么呢？肯定使用了相对应的数据结构，想想查询一个<em>txt</em>文本中的数据，只能通过遍历一遍文档查询，时间的复杂度就是<em>O(n)</em>如果我将这些数据建立成一棵树呢？查询的复杂度变成<em>O(logn)</em>，建立一棵树那就需要对这颗树进行维护。</p>
-<blockquote>
-<ol>
-<li><p>树文件存在哪里？</p>
-<p>   引出数据库索引文件存在哪里呢？是磁盘还是内存呢？在进行SQL查询的时候，将磁盘中的文件加载到内存。</p>
-</li>
-<li><p>建立成树那么对数据有什么要求呢？</p>
-</li>
-<li><p>数据改动时如何对树结构进行维护呢？</p>
-</li>
-</ol>
-</blockquote>
-<h4 id="2-硬件访问的局部性原理"><a href="#2-硬件访问的局部性原理" class="headerlink" title="2. 硬件访问的局部性原理"></a>2. 硬件访问的局部性原理</h4><p>​        在对硬盘进行读取数据的时候，不可能对<strong>1KB</strong>的数据进行读取，一般是读取<strong>4KB</strong>的大小，一个页的大小。恰好有时间和空间的局部性原理。</p>
-<h4 id="3-MySQL索引为什么使用B-树而不使用B-B-树、二叉树、Hash表"><a href="#3-MySQL索引为什么使用B-树而不使用B-B-树、二叉树、Hash表" class="headerlink" title="3. MySQL索引为什么使用B+树而不使用B(B-)树、二叉树、Hash表"></a>3. MySQL索引为什么使用B+树而不使用B(B-)树、二叉树、Hash表</h4><blockquote>
-<ol>
-<li>Hash表不适合区间查找，往往需求就是要进行区间查找    。</li>
-<li>二叉树会导致树的高度很高，查询效率就不高了。</li>
-<li>B树将key和data都存放在节点中，而索引文件的大小是固定的，data的大小又不定，可能会导致树深度比较深，会对性能造成影响。</li>
-<li>B树和B+树都是多叉树，不同点就是B树非叶子节点能存data，而B+树只能在叶子节点存储data，这样树的高度就会变得很低，并且B+树叶子节点使用链式环结构，方便范围、随机查找。</li>
-</ol>
-</blockquote>
-<h4 id="4-MySQL存储引擎"><a href="#4-MySQL存储引擎" class="headerlink" title="4. MySQL存储引擎"></a>4. MySQL存储引擎</h4><h5 id="索引文件要不要和数据文件放在一起？"><a href="#索引文件要不要和数据文件放在一起？" class="headerlink" title="索引文件要不要和数据文件放在一起？"></a>索引文件要不要和数据文件放在一起？</h5><blockquote>
-<ol>
-<li><p>​    聚簇索引(InnoDB)，放在一起，MySQL默认是InnoDB。.frm表结构，.ibd索引和数据存放的文件。默认情况会把所有的数据的文件放在表空间中，不会把每个表数据单独保存，需要设置参数更改。</p>
-<blockquote>
-<p><strong>回表</strong></p>
-<p>​    主键建索引，叶子节点存放的是data数据。</p>
-<p>​    普通列建索引，叶子节点存放的主键的id，而不是data数据。<strong>也就意味着要读取两次索引文件</strong>。</p>
-</blockquote>
-</li>
-<li><p>​    非聚簇索引(MyISAM)，不放在一起，.frm表结构，.MYI索引数据，.MYD实际数据存放。</p>
-<blockquote>
-<p>叶子节点上的值，不是数据的值，存储的是地址，再根据地址的值去找数据。</p>
-</blockquote>
-</li>
-</ol>
-</blockquote>
-<h5 id="存储引擎之间的区别："><a href="#存储引擎之间的区别：" class="headerlink" title="存储引擎之间的区别："></a>存储引擎之间的区别：</h5><table>
-<thead>
-<tr>
-<th align="center"></th>
-<th align="center">InnoDB</th>
-<th align="center">MyISAM</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="center">索引类型</td>
-<td align="center">聚簇索引</td>
-<td align="center">非聚簇索引</td>
-</tr>
-<tr>
-<td align="center">支持事务</td>
-<td align="center">支持</td>
-<td align="center">不支持</td>
-</tr>
-<tr>
-<td align="center">支持表锁</td>
-<td align="center">支持</td>
-<td align="center">支持</td>
-</tr>
-<tr>
-<td align="center">支持行锁</td>
-<td align="center">支持</td>
-<td align="center">不支持</td>
-</tr>
-<tr>
-<td align="center">支持外键</td>
-<td align="center">支持</td>
-<td align="center">不支持</td>
-</tr>
-<tr>
-<td align="center">支持全文索引</td>
-<td align="center">支持(5.6)</td>
-<td align="center">支持</td>
-</tr>
-<tr>
-<td align="center">适合操作的类型</td>
-<td align="center">插入、更新、删除</td>
-<td align="center">查询</td>
-</tr>
-</tbody></table>
-<h5 id="数据更新之后索引文件怎么办？"><a href="#数据更新之后索引文件怎么办？" class="headerlink" title="数据更新之后索引文件怎么办？"></a>数据更新之后索引文件怎么办？</h5><blockquote>
-<p>主动建索引，唯一列和主键。</p>
-<p>建立索引后，先遍历一遍索引，再遍历一遍数据。</p>
-<p>建议把主键设成自增的，并建立索引。</p>
-<p><strong>索引维护是非常麻烦的</strong>，不要一拍脑门就建立一个索引。</p>
-</blockquote>
-<h4 id="5-索引的分类"><a href="#5-索引的分类" class="headerlink" title="5. 索引的分类"></a>5. 索引的分类</h4><ol>
-<li><p>主键索引：如果建表的时候没有指定主键，MySQL会自动建立一个row_id的字段作为主键，每个表只有一个主键(不是指一个列)。</p>
-<blockquote>
-<p>auto_increment是否需要加上？没有特殊需求是要加上的，B+树直接在后面添加就好了，如果是乱序的话，涉及到磁盘块数据的移动，可能造成<strong><u>页分裂</u></strong>，<strong><u>页合并</u></strong>，auto_increment使用<strong><u>自增锁</strong></u>来实现的。</p>
-</blockquote>
-</li>
-<li><p>唯一索引：所有值只能出现一次。如果代码层面保证值的唯一，但是数据库层面没有设置唯一约束，那么这个索引到底建成唯一索引，还是普通索引，普通索引有<strong><u>回表</u></strong>，值可以空。</p>
-</li>
-<li><p>普通索引：有回表，值可以为空。</p>
-<blockquote>
-<p><strong><u>回表</u></strong>（InnoDB）：</p>
-<p>id 索引， name索引</p>
-<p><code>selcet * from table where name = &quot;&quot;;</code></p>
-<p>1) 先去id索引查找</p>
-<p>2) 在去name索引查找</p>
-<hr>
-<p><strong><u>覆盖索引</u></strong>：</p>
-<p>id 索引， name索引</p>
-<p><code>selcet id from table where name = &quot;&quot;;</code></p>
-<p>查id的时候不需要进行回表</p>
-</blockquote>
-</li>
-<li><p>全文索引：索引类型是FULLTEXT，全文索引可以在varchar、char、text类型列上建立。</p>
-<blockquote>
-<p>MyISAM支持、InnoDB(5.6以后)支持，在很多文章中，搜带有Java关键字的文章。公司里面一般用es等做全文检索。</p>
-</blockquote>
-</li>
-<li><p>组合索引：多列值组成一个索引，专门用于组合搜索。</p>
-<blockquote>
-<p>id name age address 对这个表进行查询语句，但是我在做查询的时候，基本上是用name和age为条件做查询语句的，那么我就可以将name和age这两个列做成组合索引。</p>
-<p><strong><u>最左匹配原则</u></strong>：对name和age设成组合索引，name在左，如果name索引检测不到，那么就不会对age进行索引检测。</p>
-<ol>
-<li><p><strong>索引文件的个数</strong>：要建立的索引有age，name and age, 那么name and age 的左应该的age，这样的话age单独的索引就不需要建立了。</p>
-</li>
-<li><p><strong>索引文件的量</strong>：要建立的索引有name and age， age， name，name and age 的最左应该是name，因为name索引所占的空间明显比age大。</p>
-<p><strong>这里可以结合项目经验，两个列，如何进行优化的。</strong></p>
-</li>
-</ol>
-</blockquote>
-</li>
-<li><p><strong>索引下推</strong></p>
-<blockquote>
-<p>table : id name age address</p>
-<p>组合索引：name  and age</p>
-<p><code>select * from table where name = &quot;&quot; and age = 10;</code></p>
-<table>
-<thead>
-<tr>
-<th align="center">id</th>
-<th align="center">name</th>
-<th align="center">age</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="center">1</td>
-<td align="center">张三</td>
-<td align="center">10</td>
-</tr>
-<tr>
-<td align="center">2</td>
-<td align="center">张三</td>
-<td align="center">20</td>
-</tr>
-<tr>
-<td align="center">3</td>
-<td align="center">张三</td>
-<td align="center">30</td>
-</tr>
-</tbody></table>
-<p>5.6之前，先找name树，遍历到所有符合要求的id，再去id树中进行查找，将全部的结果返回，看看age是否等于10，回表带id 1 2 3 过去。</p>
-<p>索引下推：name 查询到3条数据之后，先用组合索引中的age进行一遍筛选，然后在进行回表。回表只带id 1 过去。</p>
-</blockquote>
-</li>
-<li><h4 id="索引维护"><a href="#索引维护" class="headerlink" title="索引维护"></a>索引维护</h4><blockquote>
-<p>索引在插入新值的时候，为了维护索引的有序性，集中分一下情况：</p>
-<blockquote>
-<ol>
-<li>如果插入一个比较大的值，直接插入几乎没有什么成本。</li>
-<li>如果插入中间的值，需要逻辑上移动后续的元素，空出位置，如果需要插入的数据页满了，就需要单独申请一个新的数据页，然后移动数据过去，也叫作页分裂，此时性能受影响同时空间的使用率也会降低，除了<strong>页分裂</strong>之外还有还有<strong>页合并</strong>。</li>
-<li>尽量使用自增主键作为索引。</li>
-</ol>
-</blockquote>
-</blockquote>
-</li>
-</ol>
-
+        <h4 id="1-MySQL架构"><a href="#1-MySQL架构" class="headerlink" title="1. MySQL架构"></a>1. MySQL架构</h4>
+        
+          <a class="article-more-a" href="/2020/03/05/MySQL%E6%9E%B6%E6%9E%84/#more">more >></a>
+        
       
 
       
@@ -340,7 +171,139 @@
 
       
         <p class="article-more-link">
-          <a class="article-more-a" href="/2020/03/04/MySQL%E7%B4%A2%E5%BC%95/">展开全文 >></a>
+          <a class="article-more-a" href="/2020/03/05/MySQL%E6%9E%B6%E6%9E%84/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-MySQL日志" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/03/05/MySQL%E6%97%A5%E5%BF%97/">MySQL日志</a>
+    </h1>
+  
+
+        
+        <a href="/2020/03/05/MySQL%E6%97%A5%E5%BF%97/" class="archive-article-date">
+  	<time datetime="2020-03-04T16:58:02.790Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-03-05</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h4 id="日志的分类"><a href="#日志的分类" class="headerlink" title="日志的分类"></a>日志的分类</h4><ol>
+<li>Server端的日志：Bin日志</li>
+<li>存储引擎端的日志：Redo日志(InnoDB)、Undo日志（InnoDB）
+        
+          <a class="article-more-a" href="/2020/03/05/MySQL%E6%97%A5%E5%BF%97/#more">more >></a>
+        
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/03/05/MySQL%E6%97%A5%E5%BF%97/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-MySQL索引" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/03/05/MySQL%E7%B4%A2%E5%BC%95/">MySQL索引</a>
+    </h1>
+  
+
+        
+        <a href="/2020/03/05/MySQL%E7%B4%A2%E5%BC%95/" class="archive-article-date">
+  	<time datetime="2020-03-04T16:57:13.386Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-03-05</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h4 id="1-为什么要使用索引"><a href="#1-为什么要使用索引" class="headerlink" title="1. 为什么要使用索引"></a>1. 为什么要使用索引</h4>
+        
+          <a class="article-more-a" href="/2020/03/05/MySQL%E7%B4%A2%E5%BC%95/#more">more >></a>
+        
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/03/05/MySQL%E7%B4%A2%E5%BC%95/">展开全文 >></a>
         </p>
       
 
@@ -377,13 +340,13 @@
         
   
     <h1 itemprop="name">
-      <a class="article-title" href="/2020/03/04/hello-world/">Hello World</a>
+      <a class="article-title" href="/2020/03/05/hello-world/">Hello World</a>
     </h1>
   
 
         
-        <a href="/2020/03/04/hello-world/" class="archive-article-date">
-  	<time datetime="2020-03-04T10:04:32.298Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-03-04</time>
+        <a href="/2020/03/05/hello-world/" class="archive-article-date">
+  	<time datetime="2020-03-04T16:52:12.350Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-03-05</time>
 </a>
         
       </header>
@@ -391,19 +354,9 @@
     <div class="article-entry" itemprop="articleBody">
       
         <p>Welcome to <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="noopener">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="noopener">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="noopener">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">"My New Post"</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/writing.html" target="_blank" rel="noopener">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/server.html" target="_blank" rel="noopener">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/generating.html" target="_blank" rel="noopener">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html" target="_blank" rel="noopener">Deployment</a></p>
-
+        
+          <a class="article-more-a" href="/2020/03/05/hello-world/#more">more >></a>
+        
       
 
       
@@ -415,7 +368,7 @@
 
       
         <p class="article-more-link">
-          <a class="article-more-a" href="/2020/03/04/hello-world/">展开全文 >></a>
+          <a class="article-more-a" href="/2020/03/05/hello-world/">展开全文 >></a>
         </p>
       
 
